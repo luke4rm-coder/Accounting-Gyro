@@ -1,0 +1,747 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Gyro — AI Accounting Assistant</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+            background: linear-gradient(135deg, #f4f7fb, #e8eef7);
+            color: #222;
+        }
+
+        .app-shell {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            background: #ffffff;
+            box-shadow: 2px 0 12px rgba(0,0,0,0.06);
+            padding: 24px 18px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 24px;
+        }
+
+        .logo span {
+            color: #4a6cf7;
+        }
+
+        .nav-section-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #999;
+            margin: 16px 0 8px;
+        }
+
+        .nav-item {
+            padding: 10px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #444;
+        }
+
+        .nav-item.active {
+            background: #eef2ff;
+            color: #3041c4;
+            font-weight: 600;
+        }
+
+        .nav-item:hover {
+            background: #f3f5ff;
+        }
+
+        .nav-footer {
+            margin-top: auto;
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        /* Main content */
+        .main {
+            flex: 1;
+            padding: 24px 28px;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .top-title {
+            font-size: 22px;
+            font-weight: 600;
+        }
+
+        .top-subtitle {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .pill {
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #eef2ff;
+            color: #4a6cf7;
+            font-size: 12px;
+        }
+
+        /* Sections */
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        /* Cards / layout */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 18px 18px 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .card-sub {
+            font-size: 12px;
+            color: #777;
+        }
+
+        .metric {
+            font-size: 24px;
+            font-weight: 700;
+            margin-top: 10px;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            background: #f4f6ff;
+            color: #4a6cf7;
+            margin-top: 8px;
+        }
+
+        /* Forms / buttons */
+        input[type="file"],
+        input[type="text"],
+        select {
+            font-size: 13px;
+        }
+
+        .field-label {
+            font-size: 13px;
+            margin-bottom: 4px;
+            color: #555;
+        }
+
+        .input-text {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid #d0d5e4;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 10px;
+            padding: 9px 14px;
+            font-size: 13px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: #4a6cf7;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #3a59d6;
+        }
+
+        .btn-outline {
+            background: #fff;
+            color: #4a6cf7;
+            border: 1px solid #d0d5e4;
+        }
+
+        .btn-outline:hover {
+            background: #eef2ff;
+        }
+
+        .btn-danger {
+            background: #ff5c5c;
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            background: #e04848;
+        }
+
+        .row {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .col {
+            flex: 1;
+            min-width: 260px;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        th, td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #e1e6ef;
+            text-align: left;
+        }
+
+        th {
+            background: #f7f9fc;
+            font-weight: 600;
+        }
+
+        /* Chat */
+        .chat-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        #chat-log {
+            height: 320px;
+            background: #f7f9fc;
+            border-radius: 14px;
+            border: 1px solid #e1e6ef;
+            padding: 12px;
+            overflow-y: auto;
+            font-size: 13px;
+        }
+
+        .chat-msg-user {
+            margin-bottom: 8px;
+        }
+
+        .chat-msg-user b {
+            color: #3041c4;
+        }
+
+        .chat-msg-assistant b {
+            color: #0b915b;
+        }
+
+        .chat-input-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-input-row input {
+            flex: 1;
+        }
+
+        .suggested-prompts {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .prompt-pill {
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #eef2ff;
+            font-size: 11px;
+            cursor: pointer;
+            color: #3041c4;
+        }
+
+        .prompt-pill:hover {
+            background: #e0e5ff;
+        }
+
+        /* Settings */
+        .settings-group {
+            margin-bottom: 18px;
+        }
+
+        .settings-label {
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+
+        .muted {
+            font-size: 12px;
+            color: #777;
+        }
+
+        @media (max-width: 800px) {
+            .sidebar {
+                display: none;
+            }
+            .main {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="app-shell">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="logo">Gyro<span>.</span></div>
+
+        <div class="nav-section-title">Main</div>
+        <div class="nav-item active" data-section="dashboard">Dashboard</div>
+        <div class="nav-item" data-section="documents">Documents</div>
+        <div class="nav-item" data-section="transactions">Transactions</div>
+        <div class="nav-item" data-section="chat">Chat</div>
+
+        <div class="nav-section-title">Other</div>
+        <div class="nav-item" data-section="settings">Settings</div>
+
+        <div class="nav-footer">
+            Gyro · AI accounting assistant<br />
+            Session data stored locally on this server.
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+        <div class="top-bar">
+            <div>
+                <div class="top-title">Good work, accountant.</div>
+                <div class="top-subtitle">Review documents, categorize transactions, and ask Gyro questions — all in one place.</div>
+            </div>
+            <div class="pill">Calm mode · Stable</div>
+        </div>
+
+        <!-- DASHBOARD -->
+        <section id="section-dashboard" class="section active">
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-title">Invoices processed</div>
+                    <div class="card-sub">Count of invoices extracted this session.</div>
+                    <div class="metric" id="metric-invoices">0</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Transactions loaded</div>
+                    <div class="card-sub">Rows available for categorization.</div>
+                    <div class="metric" id="metric-transactions">0</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Exports generated</div>
+                    <div class="card-sub">CSV exports downloaded this session.</div>
+                    <div class="metric" id="metric-exports">0</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Gyro status</div>
+                    <div class="card-sub">Ready to assist with accounting workflows.</div>
+                    <span class="tag">Online · Connected</span>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col">
+                    <div class="card">
+                        <div class="card-title">Quick actions</div>
+                        <div class="card-sub">Common tasks accountants run frequently.</div>
+                        <div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px;">
+                            <button class="btn btn-outline" onclick="switchSection('documents')">Upload invoices</button>
+                            <button class="btn btn-outline" onclick="switchSection('transactions')">Upload transactions</button>
+                            <button class="btn btn-outline" onclick="switchSection('chat')">Ask Gyro a question</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card">
+                        <div class="card-title">Session notes</div>
+                        <div class="card-sub">Use Gyro to summarize your work at the end of the day.</div>
+                        <p class="muted" style="margin-top: 10px;">
+                            Example: “Summarize today’s invoices and highlight any unusual vendors or amounts.”
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- DOCUMENTS -->
+        <section id="section-documents" class="section">
+            <div class="row">
+                <div class="col">
+                    <div class="card">
+                        <div class="card-title">Upload invoice PDF</div>
+                        <div class="card-sub">Gyro will extract structured invoice data.</div>
+                        <div style="margin-top: 10px;">
+                            <div class="field-label">Invoice PDF</div>
+                            <input type="file" id="invoice-file" accept="application/pdf" />
+                            <div style="margin-top: 10px;">
+                                <button class="btn btn-primary" onclick="extractInvoice()">Extract invoice</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col">
+                    <div class="card">
+                        <div class="card-title">Last extracted invoice</div>
+                        <div class="card-sub">Preview of the most recent extraction.</div>
+                        <pre id="invoice-output" style="margin-top: 10px; font-size: 11px; background:#f7f9fc; padding:10px; border-radius:10px; max-height:260px; overflow:auto;"></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRANSACTIONS -->
+        <section id="section-transactions" class="section">
+            <div class="row">
+                <div class="col">
+                    <div class="card">
+                        <div class="card-title">Upload CSV / Excel</div>
+                        <div class="card-sub">Gyro will read rows and prepare them for categorization.</div>
+                        <div style="margin-top: 10px;">
+                            <div class="field-label">Transaction file(s)</div>
+                            <input type="file" id="txn-files" multiple />
+                            <div style="margin-top: 10px; display:flex; gap:8px; flex-wrap:wrap;">
+                                <button class="btn btn-primary" onclick="uploadTransactions()">Upload</button>
+                                <button class="btn btn-outline" onclick="categorizeTransactions()">Categorize</button>
+                                <button class="btn btn-outline" onclick="exportTransactions()">Export CSV</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col">
+                    <div class="card">
+                        <div class="card-title">Uploaded files summary</div>
+                        <div class="card-sub">Basic info returned from the backend.</div>
+                        <pre id="upload-summary" style="margin-top: 10px; font-size: 11px; background:#f7f9fc; padding:10px; border-radius:10px; max-height:260px; overflow:auto;"></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 16px;">
+                <div class="card-title">Categorized transactions</div>
+                <div class="card-sub">Results from Gyro’s categorization endpoint.</div>
+                <div style="margin-top: 10px; max-height: 260px; overflow:auto;">
+                    <table id="txn-table">
+                        <thead>
+                            <tr>
+                                <th>Original</th>
+                                <th>Category</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Filled dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- CHAT -->
+        <section id="section-chat" class="section">
+            <div class="card">
+                <div class="card-title">Chat with Gyro</div>
+                <div class="card-sub">Ask accounting questions, reference documents, and get explanations.</div>
+
+                <div class="chat-wrapper" style="margin-top: 10px;">
+                    <div id="chat-log"></div>
+
+                    <div class="chat-input-row">
+                        <input id="chat-input" class="input-text" type="text" placeholder="Ask Gyro anything..." />
+                        <button class="btn btn-primary" onclick="sendMessage()">Send</button>
+                    </div>
+
+                    <div class="suggested-prompts">
+                        <div class="prompt-pill" onclick="setPrompt('Summarize this month’s expenses by category.')">Monthly summary</div>
+                        <div class="prompt-pill" onclick="setPrompt('Explain any unusual or large transactions in this dataset.')">Find anomalies</div>
+                        <div class="prompt-pill" onclick="setPrompt('Draft a short email to a client explaining their outstanding invoices.')">Client email</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SETTINGS -->
+        <section id="section-settings" class="section">
+            <div class="card">
+                <div class="card-title">Settings</div>
+                <div class="card-sub">Basic controls for this Gyro session.</div>
+
+                <div style="margin-top: 12px;">
+                    <div class="settings-group">
+                        <div class="settings-label">Client context</div>
+                        <select class="input-text" style="height:auto;">
+                            <option>Default client</option>
+                            <option>Client A</option>
+                            <option>Client B</option>
+                        </select>
+                        <div class="muted">In a real SaaS, each client would have separate documents and conversations.</div>
+                    </div>
+
+                    <div class="settings-group">
+                        <div class="settings-label">Session data</div>
+                        <button class="btn btn-danger" onclick="resetData()">Reset all data</button>
+                        <div class="muted">Clears uploaded rows and conversation memory on the server.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<script>
+    // NAVIGATION
+    const navItems = document.querySelectorAll(".nav-item");
+    const sections = document.querySelectorAll(".section");
+
+    function switchSection(id) {
+        sections.forEach(sec => {
+            sec.classList.toggle("active", sec.id === "section-" + id);
+        });
+        navItems.forEach(item => {
+            item.classList.toggle("active", item.dataset.section === id);
+        });
+    }
+
+    navItems.forEach(item => {
+        item.addEventListener("click", () => switchSection(item.dataset.section));
+    });
+
+    // METRICS
+    let metricInvoices = 0;
+    let metricTransactions = 0;
+    let metricExports = 0;
+
+    function updateMetrics() {
+        document.getElementById("metric-invoices").innerText = metricInvoices;
+        document.getElementById("metric-transactions").innerText = metricTransactions;
+        document.getElementById("metric-exports").innerText = metricExports;
+    }
+
+    // CHAT
+    function appendChat(role, text) {
+        const log = document.getElementById("chat-log");
+        const div = document.createElement("div");
+        div.className = role === "user" ? "chat-msg-user" : "chat-msg-assistant";
+        div.innerHTML = `<b>${role === "user" ? "You" : "Gyro"}:</b> ${text}`;
+        log.appendChild(div);
+        log.scrollTop = log.scrollHeight;
+    }
+
+    function sendMessage() {
+        const input = document.getElementById("chat-input");
+        const message = input.value.trim();
+        if (!message) return;
+
+        appendChat("user", message);
+        input.value = "";
+
+        fetch("/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message })
+        })
+        .then(res => res.json())
+        .then(data => {
+            appendChat("assistant", data.reply || "(no reply)");
+        })
+        .catch(err => {
+            appendChat("assistant", "Error: " + err.message);
+        });
+    }
+
+    function setPrompt(text) {
+        document.getElementById("chat-input").value = text;
+        switchSection("chat");
+    }
+
+    // DOCUMENTS: INVOICE EXTRACTION
+    function extractInvoice() {
+        const fileInput = document.getElementById("invoice-file");
+        if (!fileInput.files.length) {
+            alert("Please select an invoice PDF.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+
+        fetch("/extract-invoice", {
+            method: "POST",
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById("invoice-output").textContent = JSON.stringify(data, null, 2);
+            metricInvoices += 1;
+            updateMetrics();
+        })
+        .catch(err => {
+            document.getElementById("invoice-output").textContent = "Error: " + err.message;
+        });
+    }
+
+    // TRANSACTIONS: UPLOAD
+    function uploadTransactions() {
+        const files = document.getElementById("txn-files").files;
+        if (!files.length) {
+            alert("Please select at least one CSV/Excel file.");
+            return;
+        }
+
+        const formData = new FormData();
+        for (let f of files) formData.append("files", f);
+
+        fetch("/upload", {
+            method: "POST",
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById("upload-summary").textContent = JSON.stringify(data, null, 2);
+            // We don't know exact rows here, but backend is tracking them.
+            metricTransactions += 1;
+            updateMetrics();
+        })
+        .catch(err => {
+            document.getElementById("upload-summary").textContent = "Error: " + err.message;
+        });
+    }
+
+    // TRANSACTIONS: CATEGORIZE
+    function categorizeTransactions() {
+        fetch("/categorize", { method: "POST" })
+        .then(res => res.json())
+        .then(data => {
+            const tbody = document.querySelector("#txn-table tbody");
+            tbody.innerHTML = "";
+
+            if (!data.categorized || !Array.isArray(data.categorized)) {
+                const tr = document.createElement("tr");
+                const td = document.createElement("td");
+                td.colSpan = 2;
+                td.textContent = "No categorized data returned.";
+                tr.appendChild(td);
+                tbody.appendChild(tr);
+                return;
+            }
+
+            data.categorized.forEach(row => {
+                const tr = document.createElement("tr");
+                const tdOriginal = document.createElement("td");
+                const tdCategory = document.createElement("td");
+
+                tdOriginal.textContent = JSON.stringify(row.original || row, null, 0);
+                tdCategory.textContent = row.category || "";
+
+                tr.appendChild(tdOriginal);
+                tr.appendChild(tdCategory);
+                tbody.appendChild(tr);
+            });
+        })
+        .catch(err => {
+            alert("Error categorizing: " + err.message);
+        });
+    }
+
+    // TRANSACTIONS: EXPORT
+    function exportTransactions() {
+        fetch("/export")
+        .then(res => {
+            if (!res.ok) {
+                return res.json().then(d => { throw new Error(d.error || "Export failed"); });
+            }
+            metricExports += 1;
+            updateMetrics();
+            return res.blob();
+        })
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "gyro_export.csv";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        })
+        .catch(err => {
+            alert("Export error: " + err.message);
+        });
+    }
+
+    // SETTINGS: RESET
+    function resetData() {
+        if (!confirm("Reset all data for this session?")) return;
+
+        fetch("/reset", { method: "POST" })
+        .then(res => res.json())
+        .then(() => {
+            alert("Data reset.");
+            document.getElementById("upload-summary").textContent = "";
+            document.getElementById("invoice-output").textContent = "";
+            document.querySelector("#txn-table tbody").innerHTML = "";
+            document.getElementById("chat-log").innerHTML = "";
+            metricInvoices = 0;
+            metricTransactions = 0;
+            metricExports = 0;
+            updateMetrics();
+        })
+        .catch(err => {
+            alert("Reset error: " + err.message);
+        });
+    }
+
+    updateMetrics();
+</script>
+</body>
+</html>
