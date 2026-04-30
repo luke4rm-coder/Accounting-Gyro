@@ -1,0 +1,9 @@
+flask
+python-dotenv
+requests
+pandas
+openpyxl
+PyPDF2
+groq
+tavily-python
+PyMuPDF
