@@ -3,337 +3,669 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <title>Gyro – AI Accounting Assistant</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gyro Accounting Assistant</title>
 
     <style>
+        * { box-sizing: border-box; }
+
         body {
             margin: 0;
-            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             background: #f3f4f6;
-            font-family: "Segoe UI", Arial, sans-serif;
             display: flex;
-            overflow-x: hidden;
+            color: #111827;
         }
 
-        /* SUBTLE FLOATING BACKGROUND SHAPES (PROFESSIONAL) */
+        /* Floating background */
         .float-shape {
             position: fixed;
             width: 160px;
             height: 160px;
-            background: rgba(0, 123, 255, 0.06);
+            background: rgba(59,130,246,0.08);
             border-radius: 50%;
-            filter: blur(45px);
-            animation: float 14s infinite ease-in-out;
+            filter: blur(40px);
+            animation: float 14s ease-in-out infinite;
             z-index: -1;
         }
-
-        .shape1 { top: 12%; left: 6%; animation-delay: 0s; }
-        .shape2 { bottom: 18%; right: 12%; animation-delay: 4s; }
+        .shape1 { top: 10%; left: 8%; }
+        .shape2 { bottom: 12%; right: 10%; animation-delay: 4s; }
 
         @keyframes float {
-            0% { transform: translateY(0px) translateX(0px); }
-            50% { transform: translateY(-35px) translateX(25px); }
-            100% { transform: translateY(0px) translateX(0px); }
+            0% { transform: translate(0,0); }
+            50% { transform: translate(20px,-30px); }
+            100% { transform: translate(0,0); }
         }
 
-        /* SIDEBAR */
+        /* Sidebar */
         #sidebar {
-            width: 240px;
+            width: 230px;
             background: #ffffff;
             height: 100vh;
-            padding: 20px;
-            box-shadow: 2px 0 8px rgba(0,0,0,0.05);
-            position: relative;
+            padding: 20px 16px;
+            box-shadow: 2px 0 8px rgba(15,23,42,0.06);
+            display: flex;
+            flex-direction: column;
         }
 
-        #sidebar h3 {
-            margin-top: 20px;
-            margin-bottom: 10px;
-            font-size: 14px;
-            opacity: 0.6;
+        .logo {
+            font-weight: 700;
+            font-size: 20px;
+            margin-bottom: 24px;
+        }
+
+        .section-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #9ca3af;
+            margin: 12px 8px 6px;
         }
 
         .nav-item {
-            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 10px;
             border-radius: 8px;
-            margin-bottom: 8px;
+            font-size: 14px;
+            color: #374151;
             cursor: pointer;
-            position: relative;
-            transition: 0.25s ease;
+            transition: 0.2s ease;
         }
 
         .nav-item:hover {
-            background: #e8f0ff;
-            transform: translateX(6px);
+            background: #e5edff;
+            transform: translateX(4px);
         }
 
-        /* CHAT FIRST */
-        #chat-container {
-            width: 100%;
-            max-width: 900px;
-            margin: 20px auto;
-            height: 50vh;
-            display: flex;
-            flex-direction: column;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            overflow: hidden;
-            animation: fadeIn 0.8s ease;
+        .nav-item.active {
+            background: #dbeafe;
+            color: #1d4ed8;
+            font-weight: 600;
         }
+
+        .nav-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: #c7d2fe;
+        }
+
+        /* Main */
+        #main {
+            flex: 1;
+            padding: 24px 28px;
+            overflow-y: auto;
+        }
+
+        #header-text {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 18px;
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        .section.active { display: block; }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 18px 18px 16px;
+            box-shadow: 0 4px 10px rgba(15,23,42,0.06);
+            margin-bottom: 18px;
+        }
+
+        .card-title {
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 6px;
+        }
+
+        .card-main {
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .muted {
+            font-size: 13px;
+            color: #9ca3af;
+        }
+
+        .row {
+            display: flex;
+            gap: 16px;
+        }
+
+        .row > .card {
+            flex: 1;
+        }
+
+        /* Chat */
+        #chat-container {
+            max-width: 900px;
+            margin-top: 4px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(15,23,42,0.06);
+            display: flex;
+            flex-direction: column;
+            height: 60vh;
         }
 
         #messages {
             flex: 1;
-            padding: 20px;
+            padding: 16px 18px;
             overflow-y: auto;
         }
 
         .msg {
-            margin-bottom: 15px;
-            padding: 12px;
-            border-radius: 8px;
             max-width: 80%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            line-height: 1.4;
             opacity: 0;
-            animation: slideIn 0.35s forwards ease-out;
+            animation: slideIn 0.25s forwards ease-out;
+        }
+
+        .msg.user {
+            margin-left: auto;
+            background: #dbeafe;
+        }
+
+        .msg.bot {
+            margin-right: auto;
+            background: #f3f4f6;
         }
 
         @keyframes slideIn {
-            from { transform: translateY(12px); opacity: 0; }
+            from { transform: translateY(8px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
-        }
-
-        .user {
-            background: #d1e7ff;
-            align-self: flex-end;
-        }
-
-        .bot {
-            background: #e8e8e8;
-            align-self: flex-start;
         }
 
         #input-area {
             display: flex;
-            padding: 15px;
-            border-top: 1px solid #ccc;
-            background: #fafafa;
+            padding: 10px;
+            border-top: 1px solid #e5e7eb;
+            background: #f9fafb;
         }
 
         #user-input {
             flex: 1;
-            padding: 12px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            font-size: 16px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            padding: 10px 12px;
+            font-size: 14px;
         }
 
         #send-btn {
-            padding: 12px 20px;
-            margin-left: 10px;
-            background: #007bff;
-            color: white;
+            margin-left: 8px;
+            padding: 10px 16px;
+            border-radius: 8px;
             border: none;
-            border-radius: 6px;
+            background: #2563eb;
+            color: white;
+            font-size: 14px;
             cursor: pointer;
-            font-size: 16px;
-            transition: 0.2s ease;
+            transition: 0.15s ease;
         }
 
         #send-btn:hover {
-            background: #005fcc;
-            transform: scale(1.05);
+            background: #1d4ed8;
+            transform: translateY(-1px);
         }
 
-        /* DASHBOARD */
-        #main {
-            flex: 1;
-            padding: 30px;
+        /* Buttons / inputs */
+        .btn {
+            padding: 8px 13px;
+            border-radius: 8px;
+            border: none;
+            background: #2563eb;
+            color: white;
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.15s ease;
+        }
+        .btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
         }
 
-        #header-text {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 20px;
-            animation: fadeIn 1s ease;
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        .btn-secondary:hover {
+            background: #d1d5db;
         }
 
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
+        .file-list {
+            margin-top: 8px;
+            font-size: 13px;
         }
 
-        .card {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            transition: 0.25s ease;
+        .file-item {
+            padding: 6px 8px;
+            border-radius: 8px;
+            background: #f9fafb;
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
         }
 
-        .card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 10px 24px rgba(0,0,0,0.12);
-        }
-
-        /* NAME POPUP */
+        /* Name popup */
         #name-popup {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.45);
+            inset: 0;
+            background: rgba(15,23,42,0.45);
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
         }
 
         #name-box {
-            background: white;
-            padding: 30px;
+            background: #ffffff;
+            padding: 24px 22px 20px;
             border-radius: 12px;
+            width: 280px;
             text-align: center;
-            width: 300px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.2);
-            animation: fadeIn 0.6s ease;
+            box-shadow: 0 10px 30px rgba(15,23,42,0.25);
+            animation: fadeIn 0.3s ease;
+        }
+
+        #name-box h2 {
+            margin: 0 0 8px;
+            font-size: 18px;
         }
 
         #name-box input {
-            width: 90%;
-            padding: 10px;
-            margin-top: 10px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            margin-top: 8px;
+            font-size: 14px;
         }
 
         #name-box button {
-            margin-top: 15px;
-            padding: 10px 20px;
-            background: #007bff;
-            color: white;
+            margin-top: 12px;
+            width: 100%;
+            padding: 9px;
+            border-radius: 8px;
             border: none;
-            border-radius: 6px;
+            background: #2563eb;
+            color: white;
+            font-size: 14px;
             cursor: pointer;
-            transition: 0.2s ease;
         }
 
         #name-box button:hover {
-            transform: scale(1.05);
+            background: #1d4ed8;
+        }
+
+        .small {
+            font-size: 12px;
+            color: #9ca3af;
         }
     </style>
 </head>
-
 <body>
 
-    <!-- FLOATING SHAPES -->
-    <div class="float-shape shape1"></div>
-    <div class="float-shape shape2"></div>
+<div class="float-shape shape1"></div>
+<div class="float-shape shape2"></div>
 
-    <!-- NAME POPUP -->
-    <div id="name-popup">
-        <div id="name-box">
-            <h2>Welcome!</h2>
-            <p>What’s your name?</p>
-            <input id="name-input" type="text" placeholder="Enter your name">
-            <button onclick="saveName()">Continue</button>
-        </div>
+<!-- Name popup -->
+<div id="name-popup">
+    <div id="name-box">
+        <h2>Welcome to Gyro</h2>
+        <p class="small">What should I call you?</p>
+        <input id="name-input" type="text" placeholder="Your name">
+        <button onclick="saveName()">Continue</button>
+    </div>
+</div>
+
+<!-- Sidebar -->
+<div id="sidebar">
+    <div class="logo">Gyro</div>
+
+    <div class="section-label">Main</div>
+    <div class="nav-item active" data-section="home-section">
+        <div class="nav-dot"></div><span>Home</span>
+    </div>
+    <div class="nav-item" data-section="chat-section">
+        <div class="nav-dot"></div><span>Chat</span>
+    </div>
+    <div class="nav-item" data-section="documents-section">
+        <div class="nav-dot"></div><span>Documents</span>
+    </div>
+    <div class="nav-item" data-section="transactions-section">
+        <div class="nav-dot"></div><span>Transactions</span>
     </div>
 
-    <!-- SIDEBAR -->
-    <div id="sidebar">
-        <h3>MAIN</h3>
-        <div class="nav-item">Chat</div>
-        <div class="nav-item">Dashboard</div>
-        <div class="nav-item">Documents</div>
-        <div class="nav-item">Transactions</div>
-
-        <h3>OTHER</h3>
-        <div class="nav-item">Settings</div>
+    <div class="section-label">Other</div>
+    <div class="nav-item" data-section="settings-section">
+        <div class="nav-dot"></div><span>Settings</span>
     </div>
+</div>
 
-    <!-- MAIN CONTENT -->
-    <div id="main">
+<!-- Main -->
+<div id="main">
+    <!-- Home -->
+    <div id="home-section" class="section active">
+        <div id="header-text">Good work, accountant.</div>
 
-        <!-- CHAT FIRST -->
-        <div id="chat-container">
-            <div id="messages"></div>
-
-            <div id="input-area">
-                <input id="user-input" type="text" placeholder="Type a message...">
-                <button id="send-btn">Send</button>
+        <div class="row">
+            <div class="card">
+                <div class="card-title">Workspace status</div>
+                <div class="card-main">Ready to import and chat</div>
+                <div class="muted">Start in Documents or Chat.</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Documents</div>
+                <div class="card-main" id="doc-count">No files imported yet</div>
+                <div class="muted">Upload invoices, CSVs, or Excel.</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Exports</div>
+                <div class="card-main" id="export-count">No exports yet</div>
+                <div class="muted">Use the export buttons when ready.</div>
             </div>
         </div>
 
-        <!-- DASHBOARD -->
-        <div id="header-text">Good work, accountant.</div>
-
-        <div class="grid">
-            <div class="card"><h3>Invoices processed</h3><p>0</p></div>
-            <div class="card"><h3>Transactions loaded</h3><p>0</p></div>
-            <div class="card"><h3>Exports generated</h3><p>0</p></div>
-            <div class="card"><h3>Gyro status</h3><p>Online · Connected</p></div>
+        <div class="card">
+            <div class="card-title">Quick actions</div>
+            <button class="btn" onclick="goToSection('documents-section')">Import data</button>
+            <button class="btn btn-secondary" onclick="goToSection('chat-section')" style="margin-left:8px;">
+                Ask Gyro a question
+            </button>
         </div>
-
     </div>
 
-    <script>
-        const messagesDiv = document.getElementById("messages");
-        const input = document.getElementById("user-input");
-        const sendBtn = document.getElementById("send-btn");
+    <!-- Chat -->
+    <div id="chat-section" class="section">
+        <div id="header-text">Ask Gyro anything.</div>
 
-        function addMessage(text, sender) {
-            const msg = document.createElement("div");
-            msg.classList.add("msg", sender);
-            msg.textContent = text;
-            messagesDiv.appendChild(msg);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        <div class="card" style="margin-bottom:10px;">
+            <button class="btn btn-secondary" onclick="exportChat()">Export chat (.txt)</button>
+            <span class="small" style="margin-left:8px;">Downloads your current conversation.</span>
+        </div>
+
+        <div id="chat-container">
+            <div id="messages"></div>
+            <div id="input-area">
+                <input id="user-input" type="text" placeholder="Type a message and press Enter...">
+                <button id="send-btn">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Documents -->
+    <div id="documents-section" class="section">
+        <div id="header-text">Documents</div>
+
+        <div class="card">
+            <div class="card-title">Import files</div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                <input type="file" id="file-input" multiple style="display:none;">
+                <button class="btn" onclick="triggerFileUpload()">Choose files</button>
+                <span class="small">PDF, CSV, XLS, XLSX</span>
+            </div>
+            <div class="file-list" id="file-list">
+                <span class="muted">No files imported yet.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transactions -->
+    <div id="transactions-section" class="section">
+        <div id="header-text">Transactions</div>
+
+        <div class="card">
+            <div class="card-title">Export extracted transactions</div>
+            <button class="btn" onclick="exportTransactions()">Export transactions (.csv)</button>
+            <div class="muted" style="margin-top:6px;">
+                This uses data from your imported CSV/Excel files.
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Preview</div>
+            <div class="muted">
+                Once you import bank or ledger files, you can categorize and export them from here.
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings -->
+    <div id="settings-section" class="section">
+        <div id="header-text">Settings</div>
+
+        <div class="card">
+            <div class="card-title">Workspace</div>
+            <div class="muted">
+                Future space for theme, firm name, export defaults, and AI behavior.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Sidebar navigation
+    const navItems = document.querySelectorAll(".nav-item");
+    const sections = document.querySelectorAll(".section");
+
+    function goToSection(id) {
+        sections.forEach(sec => {
+            sec.classList.toggle("active", sec.id === id);
+        });
+        navItems.forEach(item => {
+            item.classList.toggle("active", item.getAttribute("data-section") === id);
+        });
+    }
+
+    navItems.forEach(item => {
+        item.addEventListener("click", () => {
+            const target = item.getAttribute("data-section");
+            goToSection(target);
+        });
+    });
+
+    // Name popup
+    const namePopup = document.getElementById("name-popup");
+    const nameInput = document.getElementById("name-input");
+    const headerText = document.getElementById("header-text");
+
+    function saveName() {
+        const name = nameInput.value.trim();
+        if (!name) return;
+        localStorage.setItem("gyro_name", name);
+        namePopup.style.display = "none";
+        updateHeaderName();
+    }
+
+    function updateHeaderName() {
+        const name = localStorage.getItem("gyro_name");
+        if (name) {
+            const homeHeader = document.querySelector("#home-section #header-text");
+            if (homeHeader) homeHeader.textContent = `Good work, ${name}.`;
         }
+    }
 
-        async function sendMessage() {
-            const text = input.value.trim();
-            if (!text) return;
+    window.addEventListener("load", () => {
+        const storedName = localStorage.getItem("gyro_name");
+        if (storedName) {
+            namePopup.style.display = "none";
+            updateHeaderName();
+        }
+        loadChatFromStorage();
+    });
 
-            addMessage(text, "user");
-            input.value = "";
+    // Chat
+    const messagesDiv = document.getElementById("messages");
+    const input = document.getElementById("user-input");
+    const sendBtn = document.getElementById("send-btn");
 
-            const response = await fetch("/chat", {
+    function addMessage(text, sender, save = true) {
+        const div = document.createElement("div");
+        div.classList.add("msg", sender);
+        div.textContent = text;
+        messagesDiv.appendChild(div);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+        if (save) {
+            const history = JSON.parse(localStorage.getItem("gyro_chat") || "[]");
+            history.push({ sender, text });
+            localStorage.setItem("gyro_chat", JSON.stringify(history));
+        }
+    }
+
+    function loadChatFromStorage() {
+        const history = JSON.parse(localStorage.getItem("gyro_chat") || "[]");
+        history.forEach(m => addMessage(m.text, m.sender, false));
+    }
+
+    async function sendMessage() {
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = "";
+        addMessage(text, "user");
+
+        try {
+            const res = await fetch("/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ message: text })
             });
+            const data = await res.json();
+            addMessage(data.reply || "No reply received.", "bot");
+        } catch (e) {
+            addMessage("Error contacting server.", "bot");
+        }
+    }
 
-            const data = await response.json();
-            addMessage(data.reply, "bot");
+    sendBtn.addEventListener("click", sendMessage);
+    input.addEventListener("keydown", e => {
+        if (e.key === "Enter") sendMessage();
+    });
+
+    // File upload → /upload
+    const fileInput = document.getElementById("file-input");
+    const fileList = document.getElementById("file-list");
+    const docCount = document.getElementById("doc-count");
+
+    function triggerFileUpload() {
+        fileInput.click();
+    }
+
+    async function sendFilesToBackend(files) {
+        if (!files.length) return;
+
+        const formData = new FormData();
+        for (let f of files) {
+            formData.append("files", f);
         }
 
-        sendBtn.addEventListener("click", sendMessage);
+        try {
+            const res = await fetch("/upload", {
+                method: "POST",
+                body: formData
+            });
+            const data = await res.json();
 
-        // ENTER TO SEND
-        input.addEventListener("keydown", function(e) {
-            if (e.key === "Enter") {
-                e.preventDefault();
-                sendMessage();
+            fileList.innerHTML = "";
+            if (data.uploaded && data.uploaded.length) {
+                data.uploaded.forEach(file => {
+                    const div = document.createElement("div");
+                    div.classList.add("file-item");
+                    div.innerHTML = `
+                        <span>${file.filename}</span>
+                        <span class="small">${file.status}</span>
+                    `;
+                    fileList.appendChild(div);
+                });
+                docCount.textContent = `${data.uploaded.length} file(s) imported`;
+            } else {
+                fileList.innerHTML = `<span class="muted">No files imported yet.</span>`;
+                docCount.textContent = "No files imported yet";
             }
-        });
-
-        // NAME LOGIC
-        function saveName() {
-            const name = document.getElementById("name-input").value.trim();
-            if (!name) return;
-
-            document.getElementById("header-text").textContent =
-                `Good work, ${name}.`;
-
-            document.getElementById("name-popup").style.display = "none";
+        } catch (e) {
+            fileList.innerHTML = `<span class="muted">Upload error.</span>`;
         }
-    </script>
+    }
+
+    fileInput.addEventListener("change", () => {
+        const files = Array.from(fileInput.files);
+        sendFilesToBackend(files);
+    });
+
+    // Export chat
+    async function exportChat() {
+        try {
+            const res = await fetch("/export-chat-txt");
+            if (!res.ok) {
+                alert("No chat history to export yet.");
+                return;
+            }
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "gyro_chat.txt";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            incrementExportCount();
+        } catch (e) {
+            alert("Error exporting chat.");
+        }
+    }
+
+    // Export transactions
+    async function exportTransactions() {
+        try {
+            const res = await fetch("/export-transactions-csv");
+            if (!res.ok) {
+                alert("No extracted data to export yet.");
+                return;
+            }
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "gyro_transactions.csv";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            incrementExportCount();
+        } catch (e) {
+            alert("Error exporting transactions.");
+        }
+    }
+
+    // Export counter (front-end only)
+    const exportCountEl = document.getElementById("export-count");
+    function incrementExportCount() {
+        const current = exportCountEl.textContent;
+        if (current.startsWith("No")) {
+            exportCountEl.textContent = "1 export generated";
+        } else {
+            const num = parseInt(current, 10) || 0;
+            exportCountEl.textContent = `${num + 1} exports generated`;
+        }
+    }
+</script>
 
 </body>
 </html>
