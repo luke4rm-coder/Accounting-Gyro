@@ -1,3 +1,4 @@
+
 from dotenv import load_dotenv
 load_dotenv()
 import os
@@ -17,7 +18,7 @@ import pandas as pd
 from datetime import datetime
 
 
-load_dotenv()
+load_dotenv()            
 GROQ_KEY = os.getenv("GROQ_API_KEY")
 TAVILY_KEY = os.getenv("TAVILY_API_KEY")
 
@@ -77,9 +78,6 @@ def allowed_file(filename: str) -> bool:
 
 
 def process_tabular_file(file_storage):
-    """
-    Read CSV/Excel into rows and append to EXTRACTED_ROWS.
-    """
     global EXTRACTED_ROWS
     filename = secure_filename(file_storage.filename)
     ext = filename.rsplit(".", 1)[1].lower()
@@ -323,6 +321,141 @@ def reset():
         json.dump(conversation, f)
     return jsonify({"status": "reset"})
 
+
+
+@app.route("/export-chat-txt", methods=["GET"])
+def export_chat_txt():
+    if not conversation:
+        return jsonify({"error": "No chat history to export"}), 400
+
+    buffer = io.StringIO()
+    for msg in conversation:
+        role = msg.get("role", "")
+        content = msg.get("content", "")
+        if role not in ("user", "assistant"):
+            continue
+        label = "USER" if role == "user" else "GYRO"
+        buffer.write(f"[{label}] {content}\n")
+
+    mem = io.BytesIO(buffer.getvalue().encode("utf-8"))
+    mem.seek(0)
+
+    filename = f"gyro_chat_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.txt"
+
+    return send_file(
+        mem,
+        mimetype="text/plain",
+        as_attachment=True,
+        download_name=filename,
+    )
+
+
+@app.route("/export-transactions-csv", methods=["GET"])
+def export_transactions_csv():
+    if not EXTRACTED_ROWS:
+        return jsonify({"error": "No extracted data to export"}), 400
+
+    output = io.StringIO()
+    fieldnames = sorted(EXTRACTED_ROWS[0].keys())
+    writer = csv.DictWriter(output, fieldnames=fieldnames)
+    writer.writeheader()
+
+    for row in EXTRACTED_ROWS:
+        writer.writerow(row)
+
+    mem = io.BytesIO(output.getvalue().encode("utf-8"))
+    mem.seek(0)
+
+    filename = f"gyro_transactions_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
+
+    return send_file(
+        mem,
+        mimetype="text/csv",
+        as_attachment=True,
+        download_name=filename,
+    )
+
+
+@app.route("/export-invoice-json", methods=["POST"])
+def export_invoice_json():
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No invoice data provided"}), 400
+
+    mem = io.BytesIO(json.dumps(data, indent=4).encode("utf-8"))
+    mem.seek(0)
+
+    filename = f"invoice_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
+
+    return send_file(
+        mem,
+        mimetype="application/json",
+        as_attachment=True,
+        download_name=filename,
+    )
+
+@app.route("/upload-multi", methods=["POST"])
+def upload_multi():
+    if "files" not in request.files:
+        return jsonify({"error": "No files part in request"}), 400
+    files = request.files.getlist("files")
+    merged_info = []
+    for f in files:
+        if allowed_file(f.filename):
+            if f.filename.lower().endswith((".csv", ".xls", ".xlsx")):
+                details = process_tabular_file(f)
+                merged_info.append(details)
+            elif f.filename.lower().endswith(".pdf"):
+                data = extract_invoice_from_pdf(f)
+                merged_info.append({"filename": f.filename, "invoice": data})
+    return jsonify({"merged": merged_info})
+
+
+@app.route("/export-excel", methods=["GET"])
+def export_excel():
+    if not EXTRACTED_ROWS:
+        return jsonify({"error": "No data"}), 400
+    df = pd.DataFrame(EXTRACTED_ROWS)
+    mem = io.BytesIO()
+    with pd.ExcelWriter(mem, engine="xlsxwriter") as writer:
+        df.to_excel(writer, index=False)
+    mem.seek(0)
+    filename = f"gyro_export_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    return send_file(mem,
+                     mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                     as_attachment=True,
+                     download_name=filename)
+
+
+@app.route("/voice-to-text", methods=["POST"])
+def voice_to_text():
+    return jsonify({"text": "Voice transcription placeholder"})
+
+
+@app.route("/text-to-voice", methods=["POST"])
+def text_to_voice():
+    return jsonify({"audio": "Voice synthesis placeholder"})
+
+
+USERS = {}
+@app.route("/signup", methods=["POST"])
+def signup():
+    data = request.get_json()
+    USERS[data["username"]] = data["password"]
+    return jsonify({"status": "signed up"})
+
+
+@app.route("/login", methods=["POST"])
+def login():
+    data = request.get_json()
+    if USERS.get(data["username"]) == data["password"]:
+        return jsonify({"status": "logged in"})
+    return jsonify({"error": "Invalid credentials"}), 401
+
+
+@app.route("/create-checkout-session", methods=["POST"])
+def create_checkout_session():
+    return jsonify({"session_url": "https://checkout.stripe.com/test-session"})
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True, use_reloader=False)
